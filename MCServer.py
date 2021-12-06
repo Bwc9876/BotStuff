@@ -54,7 +54,7 @@ class MCServerControl(commands.Cog, name="Minecraft"):
         :ivar bot: The discord bot to install this cog to
         :type bot: commands.Bot
         :ivar rcon: The Rcon connection object to use for remote execution of commands
-        :type rcon: RCONClient
+        :type rcon: Optional[RCONClient]
         :ivar query: The Query connection object to use for queries
         :type query: MinecraftServer
         :ivar server_proc: The process the server is running in
@@ -84,7 +84,7 @@ class MCServerControl(commands.Cog, name="Minecraft"):
 
     async def _init_rcon(self) -> None:
         """
-            Initializes a rcon connection to the minecraft server
+            Initializes an rcon connection to the minecraft server
         """
 
         try:
@@ -228,7 +228,7 @@ class MCServerControl(commands.Cog, name="Minecraft"):
         return response
 
     @commands.command(name="mc-exec", description="Execute a command on the server")
-    async def _exec(self, ctx: commands.Context, *command: list[str]) -> None:
+    async def _exec(self, ctx: commands.Context, *command: str) -> None:
         """
             This command executes a command on the minecraft server
 
@@ -240,11 +240,16 @@ class MCServerControl(commands.Cog, name="Minecraft"):
 
         if self._online():
             to_exec = ' '.join(command)
-            try:
-                response = await self._execute_mc_command(to_exec)
-                if response != "":
-                    await ctx.send(f"Server responded with the following:\n```\n{response}\n```")
-            except RCONFailedError as error:
-                await ctx.send(error.args[0])
+            if to_exec.strip() == "stop":
+                await ctx.send("Please use mc-stop to stop the server")
+            elif to_exec.strip() == "":
+                await ctx.send("Please type a command to exsecute")
+            else:
+                try:
+                    response = await self._execute_mc_command(to_exec)
+                    if response != "":
+                        await ctx.send(f"Server responded with the following:\n```\n{response}\n```")
+                except RCONFailedError as error:
+                    await ctx.send(error.args[0])
         else:
             await ctx.send("Server is not online")
